@@ -1,8 +1,13 @@
 import streamlit as st
 import sys
 from pathlib import Path
+import pandas as pd
+from dotenv import load_dotenv
 
-# Add src/ to path so we can import from load.py
+# Load .env when running locally
+load_dotenv()
+
+# Add src/ to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from load import query
@@ -13,11 +18,13 @@ st.set_page_config(
 )
 
 st.title("⚡ Weather + Energy Demand Dashboard")
-st.caption("Source: Open-Meteo API | Storage: DuckDB | Location: Manila, PH")
+st.caption(
+    "Source: Open-Meteo API | Storage: Supabase PostgreSQL | Location: Manila, PH"
+)
 
 
-# --- Load data from DuckDB ---
-@st.cache_data(ttl=300)  # Cache for 5 minutes to avoid re-querying on every interaction
+# --- Load data ---
+@st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_data():
     hourly = query("SELECT * FROM hourly_weather ORDER BY timestamp")
     daily = query("SELECT * FROM daily_summary ORDER BY date")
@@ -32,10 +39,9 @@ try:
         st.code("python src/pipeline.py")
         st.stop()
 
-except Exception:
+except Exception as e:
     st.error("Could not connect to the database.")
-    st.info("Run the pipeline first:")
-    st.code("python src/pipeline.py")
+    st.code(str(e))
     st.stop()
 
 
@@ -49,7 +55,7 @@ col4.metric("Peak Energy Demand", f"{hourly['energy_demand_mw'].max():.0f} MW")
 
 st.divider()
 
-# --- Line Charts ---
+# --- Charts ---
 col_left, col_right = st.columns(2)
 
 with col_left:
@@ -60,14 +66,12 @@ with col_right:
     st.subheader("Hourly Energy Demand (MW)")
     st.line_chart(hourly.set_index("timestamp")["energy_demand_mw"], color="#f97316")
 
-# --- Daily comparison ---
 st.subheader("Daily: Avg Temperature vs Avg Energy Demand")
 chart_data = daily.set_index("date")[["avg_temp_c", "avg_energy_demand_mw"]]
 st.line_chart(chart_data)
 
 st.divider()
 
-# --- Data tables ---
 st.subheader("Daily Summary Table")
 st.dataframe(daily, use_container_width=True, hide_index=True)
 

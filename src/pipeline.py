@@ -29,7 +29,7 @@ def run_pipeline():
         daily_df = transform_daily_summary(hourly_df)
 
         # 3. Load
-        print("\n[3/3] Loading to DuckDB...")
+        print("\n[3/3] Loading to Supabase PostgreSQL...")
         create_tables()
         load_hourly(hourly_df)
         load_daily(daily_df)
