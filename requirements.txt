@@ -6,3 +6,4 @@ sqlalchemy
 APScheduler
 streamlit
 python-dotenv
+plotly
